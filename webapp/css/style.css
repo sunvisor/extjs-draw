@@ -1,0 +1,19 @@
+.draw-tb-select {
+    background-image: url('../images/cursor.png');
+}
+
+.draw-tb-rect {
+    background-image: url('../images/shape_square.png');
+}
+
+.draw-tb-line {
+    background-image: url('../images/pencil.png');
+}
+
+.draw-tb-circle {
+    background-image: url('../images/shape_circle.png');
+}
+
+.draw-tb-text {
+    background-image: url('../images/font.png');
+}
