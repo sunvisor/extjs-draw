@@ -45,18 +45,13 @@ Ext.define('Draw.controller.Draw', {
 
         me.cmp = me.getDrawCompo();
         me.el = me.cmp.getEl();
-        me.el.on('click', me.onClick, me);
+        me.el.on('mousedown', me.onMouseDown, me);
+        me.el.on('mouseup', me.onMouseUp, me);
         me.el.on('mousemove', me.onMouseMove, me);
         me.onSelectToolClick();
         me.getBorderColor().picker.select('#000000');
         me.getFillColor().picker.select('#000000');
         me.allGroup = me.cmp.surface.getGroup('all');
-        me.selectedSprite = me.cmp.surface.add({
-            type: 'rect',
-            stroke: '#066',
-            'stroke-width': 1
-        });
-        me.selectedSprite.hide();
     },
 
     onSelectToolClick: function () {
@@ -105,19 +100,66 @@ Ext.define('Draw.controller.Draw', {
             group = me.cmp.surface.getGroup('selected'),
             rect = group.getBBox();
 
+        me.removeHandle();
         if( group.getCount() > 0 ){
-            me.selectedSprite.setAttributes({
-                x: rect.x,
-                y: rect.y,
-                width: rect.width,
-                height: rect.height 
-            });
-            me.selectedSprite.show(true);
-        } else {
-            me.selectedSprite.hide(true);
+            group.setAttributes({ draggable: true});
+            me.selectHandle = me.createHandle(rect);
         }
 
     },
+
+    createHandle: function (rect) {
+        var me = this,
+            surface = me.cmp.surface,
+            groupName = 'handle',
+            midx = rect.x + (rect.width / 2),
+            midy = rect.y + (rect.height / 2),
+            x2 = rect.x + rect.width,
+            y2 = rect.y + rect.height;
+
+        me.addHandle(rect.x, rect.y, 'nw-resize');
+        me.addHandle(x2, rect.y, 'ne-resize');
+        me.addHandle(rect.x, y2, 'sw-resize');
+        me.addHandle(x2, y2, 'se-resize');
+        me.addHandle(midx , rect.y, 'n-resize');
+        me.addHandle(midx , y2, 's-resize');
+        me.addHandle(rect.x, midy, 'w-resize');
+        me.addHandle(x2, midy, 'e-resize');
+
+        return me.cmp.surface.getGroup(groupName);
+
+    },
+
+    addHandle: function (x, y, cursor) {
+        var me = this,
+            handle,
+            sizeh = 3;
+            
+        handle = me.cmp.surface.add({
+            type: 'rect',
+            fill: '#ffffff',
+            stroke: '#000000',
+            'stroke-width': 1,
+            x: x - sizeh,
+            y: y - sizeh,
+            width: sizeh * 2,
+            height: sizeh * 2,
+            group: 'handle',
+            style: {
+                cursor: cursor
+            }
+        }).show(true);
+    },
+
+    removeHandle: function () {
+        var me = this,
+            grp = me.cmp.surface.getGroup('handle');
+
+        grp.each(function(item) {
+            item.remove();
+        });
+    },
+
 
     onLineToolClick: function () {
         var me = this;
@@ -161,21 +203,22 @@ Ext.define('Draw.controller.Draw', {
         });
     },
 
-    onClick: function(e, t, opt) {
+    onMouseDown: function(e, t, opt) {
         var me = this,
             xy = e.getXY();
 
-        if( !me.mouseIsDown ){
-            me.mouseIsDown = true;
-            me.originX = xy[0] - me.el.getLeft();
-            me.originY = xy[1] - me.el.getTop();
-            
-            me.rubberBand = me.rubber.add(me.cmp.surface, me.originX, me.originY);
-        } else {
-            me.execute();
-            me.mouseIsDown = false;
-        }
+        me.mouseIsDown = true;
+        me.originX = xy[0] - me.el.getLeft();
+        me.originY = xy[1] - me.el.getTop();
+        
+        me.rubberBand = me.rubber.add(me.cmp.surface, me.originX, me.originY);
+    },
 
+    onMouseUp: function(e, t, opt) {
+        var me = this;
+
+        me.execute();
+        me.mouseIsDown = false;
     },
 
     onMouseMove: function(e, t, opt) {
